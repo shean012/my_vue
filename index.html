@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <style>
+    body {
+      font-size: 16px;
+    }
+    .flex {
+      display: flex;
+      flex-direction: row;
+    }
+    p{
+      margin: 0 10px;
+    }
+    .input {
+      width: 300px;
+      margin: 30px 10px;
+    }
+    .input input {
+      width: 100%;
+      height: 23px;
+      line-height: 23px;
+    }
+  </style>
+  <title>Document</title>
+</head>
+<body>
+  <div>mini vue</div>
+  <div id="app">
+    <div>
+      <div>{{name}}</div>
+      <div class="flex"><p>age是: {{age}}</p><p>weigth是: {{obj.weigth}}</p></div>
+    </div>
+    <div>{{weigthData}}</div>
+    <div class="input">
+      <input type="text" v-model="obj.weigth">
+    </div>
+  </div>
+  <script src="./mvvm.js"></script>
+  <script>
+    let task = new VUE({
+      el: 'app',
+      data: {
+        name: 'mini-vue',
+        age: 12,
+        height: 23,
+        obj: {
+          weigth: '70'
+        }
+      },
+      computed: {
+        weigthData: {
+          get() {
+            let isNaN = Number.isNaN(Number(this.obj.weigth))
+            if (!isNaN) return Number(this.obj.weigth) + 20
+            return this.obj.weigth
+          },
+          set() {}
+        }
+      }
+    })
+  </script>
+</body>
+</html>
