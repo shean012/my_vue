@@ -5,14 +5,11 @@ class VUE {
   constructor(options = {}) {
     this.el = options.el
     this._data = options.data;
-    this.setReactive(this._data)
+    setReactive(this._data)
     // 初始化 computed 方法
     this.initComputed(options.computed)
     // 编译页面
     this.compileViews(this.el, this._data)
-
-
-
     // 将 _data 中的所有的值 赋值到 this 上，到时就可以在外面调用 this
     for (let key in this._data) {
       Object.defineProperty(this, key, {
@@ -27,39 +24,43 @@ class VUE {
       })
     }
   }
-  // 给data 中的数据设置响应方法
-  setReactive (data) {
-    // 先判断传入的值是不是对象，因为我们要做递归添加响应方法（因为data中的属性有可能是object，我们要将object里面的属性都有响应），在下面遍历data中的属性时再调用这个方法，判断是不是object 如果是 object 类型，调用多次difineReactive这个方法
-    if (typeof data !== 'object') return
-    this.difineReactive(data)
-  }
+  // // 给data 中的数据设置响应方法
+  // setReactive (data) {
+  //   // 先判断传入的值是不是对象，因为我们要做递归添加响应方法（因为data中的属性有可能是object，我们要将object里面的属性都有响应），在下面遍历data中的属性时再调用这个方法，判断是不是object 如果是 object 类型，调用多次difineReactive这个方法
+  //   if (typeof data !== 'object') return
+  //   if (Array.isArray(data)) {
+  //     let proto = this.arrayNewPrototype
+  //     Object.setPrototypeOf(data, proto)
+  //   }
+  //   this.difineReactive(data)
+  // }
 
-  difineReactive (data) {
-    let that = this
-    let dep = new Dep()
-    for (let key in data) {
-      this.setReactive(data[key])
-      // 获取data对象中原属性的值
-      let val = data[key]
-      Object.defineProperty(data, key, {
-        configurable: true,
-        enumerable: true,
-        get () {
-          if (Dep.target) {
-            dep.addSub(Dep.target)
-          }
-          return val
-        },
-        set (newVal) {
-          if (val === newVal) return
-          val = newVal
-          // 如果设置的新值是对象的话，需要将对象中属性都拥有响应的方法，所以我们这里还要调用多次 setReactive 这个方法来判断设置的新值，如果是对象类型，就再次设置响应方法 
-          that.setReactive(val)
-          dep.notify()
-        }
-      })
-    }
-  }
+  // difineReactive (data) {
+  //   let that = this
+  //   let dep = new Dep()
+  //   for (let key in data) {
+  //     this.setReactive(data[key])
+  //     // 获取data对象中原属性的值
+  //     let val = data[key]
+  //     Object.defineProperty(data, key, {
+  //       configurable: true,
+  //       enumerable: true,
+  //       get () {
+  //         if (Dep.target) {
+  //           dep.addSub(Dep.target)
+  //         }
+  //         return val
+  //       },
+  //       set (newVal) {
+  //         if (val === newVal) return
+  //         val = newVal
+  //         // 如果设置的新值是对象的话，需要将对象中属性都拥有响应的方法，所以我们这里还要调用多次 setReactive 这个方法来判断设置的新值，如果是对象类型，就再次设置响应方法 
+  //         that.setReactive(val)
+  //         dep.notify()
+  //       }
+  //     })
+  //   }
+  // }
 
   // 编译页面数据
   compileViews (el, vm) {
@@ -154,6 +155,67 @@ class VUE {
   }
 }
 
+
+// 对数组进行函数劫持
+function arrayHijack() {
+  let ordPrototype = Array.prototype
+  // 通过 Object.create 进行原型拷贝， 返回一个新的对象，继承了原数组所有方法，并且指针和原数组不一样
+  let proto = Object.create(ordPrototype)
+  let methods = ['push']
+  methods.forEach(method => {
+    proto[method] = ordPrototype[method].call(this, ...arguments)
+    // dep.notify()
+  })
+  return proto
+}
+
+// 给data 中的数据设置响应方法
+function setReactive (data) {
+  // 先判断传入的值是不是对象，因为我们要做递归添加响应方法（因为data中的属性有可能是object，我们要将object里面的属性都有响应），在下面遍历data中的属性时再调用这个方法，判断是不是object 如果是 object 类型，调用多次difineReactive这个方法
+  if (typeof data !== 'object') return
+  if (Array.isArray(data)) {
+    let proto = arrayHijack()
+    Object.setPrototypeOf(data, proto)
+  }
+  new DifineReactive(data)
+}
+
+class DifineReactive {
+  constructor(data) {
+    this.data = data
+    this.dep = new Dep()
+    let that = this
+    for (let key in this.data) {
+      setReactive(this.data[key])
+      // 获取data对象中原属性的值
+      let val = this.data[key]
+      Object.defineProperty(this.data, key, {
+        configurable: true,
+        enumerable: true,
+        get () {
+          if (Dep.target) {
+            that.dep.addSub(Dep.target)
+          }
+          return val
+        },
+        set (newVal) {
+          if (val === newVal) return
+          val = newVal
+          // 如果设置的新值是对象的话，需要将对象中属性都拥有响应的方法，所以我们这里还要调用多次 setReactive 这个方法来判断设置的新值，如果是对象类型，就再次设置响应方法 
+          setReactive(val)
+          that.dep.notify()
+        }
+      })
+    }
+  }
+}
+
+
+
+
+
+
+
 // 依赖收集 订阅者列表
 class Dep {
   constructor() {
@@ -174,7 +236,7 @@ class Dep {
     }
   }
 
-  // 通知依赖
+  // 通知依赖 更新视图 触发 watcher 的 update方法
   notify () {
     this.subs.forEach(item => item.update())
   }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <div class="app">
+    <div>{{name}}</div>
+    <div>
+      <p>{{obj.age}}</p>
+    </div>
+  </div>
+  <script src="./reactive.js"></script>
+  <script>
+    let obj = { name: 'test', obj: { age: [1, 3, 4], weight: 90 } }
+    let test = reactive(obj)
+    effect(() => {
+      console.log('run effect', test.obj.age[1])
+    })
+    test.obj.age[1] = 2
+    // mount('app')
+  </script>
+</body>
+</html>
